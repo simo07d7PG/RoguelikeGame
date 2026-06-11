@@ -24,43 +24,86 @@ namespace RoguelikeGame.Player
         {
             Vector2 facingDirection = _facing.LastDirection;
 
-            if (_stack.IsEmpty)
+            if (!_stack.IsFull && TryPickup(facingDirection))
             {
-                TryPickup(facingDirection);
                 return;
             }
 
-            if (_detector.TryGetInteractable(facingDirection, out IInteractable interactable))
+            if (!_stack.IsEmpty && TryPlace(facingDirection))
             {
-                ICarryable topItem = _stack.Peek();
-                if (topItem != null && interactable.CanPlace(topItem))
-                {
-                    ICarryable placedItem = _stack.TryPop();
-                    interactable.Place(placedItem);
-                    return;
-                }
+                return;
             }
 
-            DropTopItem(facingDirection);
+            if (!_stack.IsEmpty && !HasPickupableNearby(facingDirection))
+            {
+                DropTopItem(facingDirection);
+            }
         }
 
-        private void TryPickup(Vector2 facingDirection)
+        private bool TryPickup(Vector2 facingDirection)
         {
+            if (TryPickupFromInteractable(facingDirection))
+            {
+                return true;
+            }
+
+            return TryPickupCarryable(facingDirection);
+        }
+
+        private bool TryPickupFromInteractable(Vector2 facingDirection)
+        {
+            if (!_detector.TryGetInteractable(facingDirection, out IInteractable interactable)
+                || !interactable.CanPickup(null))
+            {
+                return false;
+            }
+
+            ICarryable takenItem = interactable.Take();
+            return takenItem != null && _stack.TryPush(takenItem);
+        }
+
+        private bool TryPickupCarryable(Vector2 facingDirection)
+        {
+            if (!_detector.TryGetCarryable(facingDirection, out ICarryable carryable))
+            {
+                return false;
+            }
+
+            return _stack.TryPush(carryable);
+        }
+
+        private bool TryPlace(Vector2 facingDirection)
+        {
+            if (!_detector.TryGetInteractable(facingDirection, out IInteractable interactable))
+            {
+                return false;
+            }
+
+            ICarryable topItem = _stack.Peek();
+            if (topItem == null || !interactable.CanPlace(topItem))
+            {
+                return false;
+            }
+
+            ICarryable placedItem = _stack.TryPop();
+            interactable.Place(placedItem);
+            return true;
+        }
+
+        private bool HasPickupableNearby(Vector2 facingDirection)
+        {
+            if (_detector.TryGetCarryable(facingDirection, out _))
+            {
+                return true;
+            }
+
             if (_detector.TryGetInteractable(facingDirection, out IInteractable interactable)
                 && interactable.CanPickup(null))
             {
-                ICarryable takenItem = interactable.Take();
-                if (takenItem != null)
-                {
-                    _stack.TryPush(takenItem);
-                    return;
-                }
+                return true;
             }
 
-            if (_detector.TryGetCarryable(facingDirection, out ICarryable carryable))
-            {
-                _stack.TryPush(carryable);
-            }
+            return false;
         }
 
         private void DropTopItem(Vector2 facingDirection)

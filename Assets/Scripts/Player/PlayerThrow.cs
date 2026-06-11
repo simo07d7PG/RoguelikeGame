@@ -6,7 +6,7 @@ namespace RoguelikeGame.Player
     public class PlayerThrow : MonoBehaviour
     {
         [SerializeField] private float throwSpeed = GameConstants.DefaultThrowSpeed;
-        [SerializeField] private float throwGravityScale = GameConstants.DefaultThrowGravityScale;
+        [SerializeField] private float throwMaxDistance = GameConstants.DefaultThrowMaxDistance;
         [SerializeField] private LineRenderer lineRenderer;
 
         private PlayerItemStack _stack;
@@ -54,7 +54,7 @@ namespace RoguelikeGame.Player
 
             Vector2 direction = _facing.LastDirection.normalized;
             Vector2 velocity = direction * throwSpeed;
-            thrownItem.OnThrown(velocity);
+            thrownItem.OnThrown(velocity, throwMaxDistance);
             _wasAiming = false;
         }
 
@@ -67,17 +67,13 @@ namespace RoguelikeGame.Player
 
             Vector2 origin = transform.position;
             Vector2 direction = _facing.LastDirection.normalized;
-            Vector2 gravity = Physics2D.gravity * throwGravityScale;
+            float stepDistance = throwMaxDistance / GameConstants.ThrowPreviewPointCount;
 
-            lineRenderer.positionCount = GameConstants.ThrowTrajectoryPointCount;
+            lineRenderer.positionCount = GameConstants.ThrowPreviewPointCount;
 
-            for (int i = 0; i < GameConstants.ThrowTrajectoryPointCount; i++)
+            for (int i = 0; i < GameConstants.ThrowPreviewPointCount; i++)
             {
-                float time = i * GameConstants.ThrowTrajectoryTimeStep;
-                Vector2 position = origin
-                    + direction * throwSpeed * time
-                    + 0.5f * gravity * (time * time);
-
+                Vector2 position = origin + direction * (stepDistance * i);
                 lineRenderer.SetPosition(i, position);
             }
         }

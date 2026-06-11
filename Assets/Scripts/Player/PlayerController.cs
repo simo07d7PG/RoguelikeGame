@@ -10,6 +10,7 @@ namespace RoguelikeGame.Player
     [RequireComponent(typeof(PlayerInteraction))]
     [RequireComponent(typeof(PlayerThrow))]
     [RequireComponent(typeof(Interaction.InteractableDetector))]
+    [RequireComponent(typeof(Grid.GridFacingResolver))]
     public class PlayerController : MonoBehaviour
     {
         private PlayerInputReader _input;
