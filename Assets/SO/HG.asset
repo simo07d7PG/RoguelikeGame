@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15a42f6afc9890748b7f991f4b29686d, type: 3}
+  m_Name: HG
+  m_EditorClassIdentifier: Assembly-CSharp::FinalRogue.WeaponData
+  weaponName: Pistol
+  damage: 5
+  magazineSize: 12
+  fireRate: 5
+  attackType: 0
+  range: 10
+  projectileSpeed: 12
+  projectilePrefab: {fileID: 3399283295615924273, guid: 5a7390480bc82524f8c2717d5f1160ff, type: 3}
+  shopPrice: 100

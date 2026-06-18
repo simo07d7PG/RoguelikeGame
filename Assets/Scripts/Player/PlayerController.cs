@@ -1,53 +1,81 @@
-using RoguelikeGame.Input;
 using UnityEngine;
 
-namespace RoguelikeGame.Player
+namespace FinalRogue
 {
-    [RequireComponent(typeof(PlayerInputReader))]
-    [RequireComponent(typeof(PlayerMovement))]
-    [RequireComponent(typeof(PlayerFacing))]
-    [RequireComponent(typeof(PlayerItemStack))]
-    [RequireComponent(typeof(PlayerInteraction))]
-    [RequireComponent(typeof(PlayerThrow))]
-    [RequireComponent(typeof(Interaction.InteractableDetector))]
-    [RequireComponent(typeof(Grid.GridFacingResolver))]
+    [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerController : MonoBehaviour
     {
-        private PlayerInputReader _input;
-        private PlayerMovement _movement;
-        private PlayerFacing _facing;
-        private PlayerItemStack _stack;
-        private PlayerInteraction _interaction;
-        private PlayerThrow _throw;
+        [SerializeField] float moveSpeed = 5f;
+        [SerializeField] GameInput gameInput;
 
-        private void Awake()
+        Rigidbody2D rb;
+
+        void Awake()
         {
-            _input = GetComponent<PlayerInputReader>();
-            _movement = GetComponent<PlayerMovement>();
-            _facing = GetComponent<PlayerFacing>();
-            _stack = GetComponent<PlayerItemStack>();
-            _interaction = GetComponent<PlayerInteraction>();
-            _throw = GetComponent<PlayerThrow>();
+            rb = GetComponent<Rigidbody2D>();
+            if (gameInput == null)
+                gameInput = GetComponent<GameInput>();
         }
 
-        private void Update()
+        public void Configure(GameInput input, float speed)
         {
-            _input.Refresh();
+            gameInput = input;
+            moveSpeed = speed;
+            EntitySetupUtility.SetField(this, "gameInput", input);
+            EntitySetupUtility.SetField(this, "moveSpeed", speed);
+        }
 
-            _facing.UpdateFacing(_input.MoveInput);
-            _movement.ApplyMovement(_input.MoveInput);
+        public void ResetMovementState()
+        {
+            if (rb == null)
+                rb = GetComponent<Rigidbody2D>();
 
-            if (_input.StackRotatePressed)
+            if (rb != null)
             {
-                _stack.RotateStack();
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.WakeUp();
+            }
+        }
+
+        void FixedUpdate()
+        {
+            if (GameManager.Instance != null && GameManager.Instance.State != GameState.Playing)
+            {
+                rb.linearVelocity = Vector2.zero;
+                return;
             }
 
-            if (_input.InteractPressed && !_input.ThrowHeld)
-            {
-                _interaction.TryInteract();
-            }
+            Vector2 input = gameInput != null ? gameInput.Move : Vector2.zero;
+            if (input.sqrMagnitude > 1f)
+                input.Normalize();
 
-            _throw.HandleThrowInput(_input.ThrowHeld, _input.ThrowReleased);
+            rb.linearVelocity = input * moveSpeed;
+            ClampToStageBounds();
+        }
+
+        void ClampToStageBounds()
+        {
+            StageBounds bounds = StageManager.Instance != null ? StageManager.Instance.CurrentBounds : null;
+            if (bounds == null || !bounds.HasBounds)
+                return;
+
+            Vector2 clamped = bounds.ClampPosition(rb.position);
+            if ((clamped - rb.position).sqrMagnitude <= 0.0001f)
+                return;
+
+            rb.position = clamped;
+            Vector2 velocity = rb.linearVelocity;
+            StageBounds.Bounds2 playBounds = bounds.WorldPlayBounds;
+            if (Mathf.Approximately(clamped.x, playBounds.Min.x) && velocity.x < 0f)
+                velocity.x = 0f;
+            if (Mathf.Approximately(clamped.x, playBounds.Max.x) && velocity.x > 0f)
+                velocity.x = 0f;
+            if (Mathf.Approximately(clamped.y, playBounds.Min.y) && velocity.y < 0f)
+                velocity.y = 0f;
+            if (Mathf.Approximately(clamped.y, playBounds.Max.y) && velocity.y > 0f)
+                velocity.y = 0f;
+            rb.linearVelocity = velocity;
         }
     }
 }
